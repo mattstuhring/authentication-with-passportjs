@@ -14,12 +14,12 @@ app.use(bodyParser.json());
 // Routes
 app.use('/users', require('./routes/users'));
 
-// 404 CATCH ALL
+// 404 catch all
 app.use((_req, res, _next) => {
   res.sendStatus(404);
 });
 
-// ERROR HANDLING
+// Error handling
 app.use((err, req, res, next) => {
   // If no specified error code, set to 'Internal Server Error (500)'
   if (!err.statusCode) {

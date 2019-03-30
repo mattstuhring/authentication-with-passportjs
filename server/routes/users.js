@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const knex = require('../knex');
+const knex = require('../../knex');
 const humps = require('humps');
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
@@ -8,14 +8,14 @@ const passport = require('passport');
 const passportConfig = require('../passport');
 const { validateBody, schemas } = require('../helpers/routeHelpers');
 
-// sign a token with 1 day expiration
+// Sign a token with 1 day expiration
 const signToken = (userId) => {
   return JWT.sign(
     {
       iss: 'fusedglass',
       sub: userId,
-      iat: new Date().getTime(), // current time
-      exp: new Date().setDate(new Date().getDate() + 1) // current time + 1 day ahead
+      iat: new Date().getTime(), // Current time
+      exp: new Date().setDate(new Date().getDate() + 1) // Current time + 1 day ahead
     },
     process.env.JWT_SECRET
   );
@@ -23,12 +23,13 @@ const signToken = (userId) => {
 
 // *****************  SIGNUP  ****************
 // *******************************************
+// Validate request body against Joi schema
 router.post('/signup', validateBody(schemas.authSchema), (req, res, next) => {
   // req.value from Joi validation
   const email = req.value.body.email;
   const password = req.value.body.password;
 
-  // check if the user already exists in db
+  // Check if the user already exists in db
   knex('users')
     .select('user_email')
     .where('user_email', email)
@@ -40,12 +41,12 @@ router.post('/signup', validateBody(schemas.authSchema), (req, res, next) => {
         throw err;
       }
 
-      // generate a password hash (salt + hash)
+      // Generate a password hash (salt + hash)
       const saltRounds = 12;
       return bcrypt.hash(password, saltRounds);
     })
     .then((hashedPassword) => {
-      // create a new user
+      // Create a new user
       let newUser = {
         userEmail: email,
         userHashedPassword: hashedPassword
@@ -53,14 +54,14 @@ router.post('/signup', validateBody(schemas.authSchema), (req, res, next) => {
 
       newUser = humps.decamelizeKeys(newUser);
 
-      // insert user into db & return user's ID
+      // Insert user into db & return user's ID
       return knex('users').returning('user_id').insert(newUser);
     })
     .then((userId) => {
-      // generate the token
+      // Generate the token
       const token = signToken(userId[0]);
 
-      // respond with token
+      // Respond with token
       res.status(200).send({ token });
     })
     .catch((err) => {
@@ -69,25 +70,27 @@ router.post('/signup', validateBody(schemas.authSchema), (req, res, next) => {
 });
 
 
-
-
-
 // *****************  SIGNIN  ****************
 // *******************************************
+// Validate request body against the Joi schema
+// Authenticate user with Passport local strategy
 router.post('/signin', validateBody(schemas.authSchema), passport.authenticate('local', { session: false }), (req, res, next) => {
+  // If authenticated, generate token with user ID
+  const token = signToken(req.user.user_id);
 
-  // console.log('req.user', req.user);
-  const token = signToken(req.user);
-
-  console.log('Successful login!');
-
+  // Respond with token
+  res.status(200).send({ token });
 });
 
 
-
-
+// *****************  RESOURCE  **************
+// *******************************************
+// Authenticate logged in user with Passport JWT strategy
+// If authenticated, allow user access to protected resource
 router.get('/secret', passport.authenticate('jwt', { session: false }), (req, res, next) => {
-  console.log('I managed to get here');
+  console.log('Authenticated!  Here are the secret resources.');
+
+  // Respond with resource
   res.send({ secret: 'resources' })
 });
 
