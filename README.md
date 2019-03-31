@@ -33,7 +33,7 @@ npm install
 npm start
 ```
 
-## Author & Repo
+## Author & Code
 
 * **Matt Stuhring** - [My Github](https://github.com/mattstuhring)
-* **Authentication With Passport.js** - [My Github](https://github.com/mattstuhring/authentication-with-passportjs)
+* **Authentication with Passport.js** - [Project Repository](https://github.com/mattstuhring/authentication-with-passportjs)
